@@ -1,20 +1,51 @@
-javascript: (function() {RewardCashback
+javascript: (function() {
   const overlay = document.createElement('div');
   const form = document.createElement('form');
 
-  const RewardDicount = 'DISCOUNT';
-  const RewardCashback = 'CASHBACK';
+  const RewardDicount = 'DST';
+  const RewardCashback = 'CHK';
 
-  const whatFind = 'bc-id-what-find';
-  const percentId = 'bc-id-min-percent';
-  const delayId = 'bc-id-delay';
+  const SortDesc = 'DSC';
+  const SortTotalCost = 'TTC';
+
+  const whatFind = 'bc-id-w-f';
+  const percentId = 'bc-id-min-per';
+  const howSort = 'bc-id-sort';
   const pageId = 'bc-id-max-page';
-  const submitBtn = 'bc-id-submit';
+  const submitBtn = 'bc-id-smt';
 
   const hostname = 'megamarket.ru';
   const itemsCatalogExample = 'https://megamarket.ru/catalog/';
 
   let style = document.createElement('style');
+
+  const cashBackSortType = `<div id="div-${howSort}">
+                              <label for="${howSort}">
+                                Сорт-ка:
+                              </label>
+                              <select id="${howSort}">
+                                <option value="${SortDesc}" selected>По убыв. %</option>
+                                <option value="${SortTotalCost}">Цена-кэшбэк</option>
+                              </select>
+                            </div>`;
+
+  document.addEventListener('change', function(event){
+    var target = event.target;
+    if (target.id == whatFind) {
+      var howSortHTML = document.getElementById(howSort);
+      if (target.value == RewardCashback) {
+        if (!howSortHTML) {
+          var sBtn = document.getElementById(submitBtn);
+          sBtn.insertAdjacentHTML('beforebegin', cashBackSortType);
+        }
+      } else {
+        if (howSortHTML) {
+          var divSortType = document.getElementById(`div-${howSort}`);
+          if (divSortType) divSortType.parentNode.removeChild(divSortType);
+        }
+      }
+    }
+  });
 
   function isItemsExists() {
     if (getItems().length) return true;
@@ -25,7 +56,7 @@ javascript: (function() {RewardCashback
     return window.bestCashFormOpen;
   }
   
-  function formIsOpen() {
+  function formIsOpen() {howSort
     window.bestCashFormOpen = true;	
   }
   
@@ -39,14 +70,14 @@ javascript: (function() {RewardCashback
   	if (isFormOpen()) return;
 
     style.innerHTML = `
-      label[for="${whatFind}"], label[for="${percentId}"], label[for="${delayId}"], label[for="${pageId}"] {
+      label[for="${whatFind}"], label[for="${percentId}"], label[for="${howSort}"], label[for="${pageId}"] {
         display: block;
         margin-bottom: 5px;
         font-size: 12px;
         color: #333;
       }
 
-      #${whatFind}, #${percentId}, #${delayId}, #${pageId} {
+      #${whatFind}, #${percentId}, #${howSort}, #${pageId} {
         display: block;
         width: 100%;
         padding: 10px;
@@ -57,12 +88,12 @@ javascript: (function() {RewardCashback
         transition: border-color 0.3s;
       }
 
-      #${whatFind}:focus, #${percentId}:focus, #${delayId}:focus, #${pageId}:focus {
+      #${whatFind}:focus, #${percentId}:focus, #${howSort}:focus, #${pageId}:focus {
         outline: none;
         border-color: #2ecc71;
       }
 
-      #${whatFind}:hover, #${percentId}:hover, #${delayId}:hover, #${pageId}:hover {
+      #${whatFind}:hover, #${percentId}:hover, #${howSort}:hover, #${pageId}:hover {
         border-color: #2ecc71;
       }
 
@@ -78,14 +109,7 @@ javascript: (function() {RewardCashback
         border-radius: 5px;
         color: #ffffff;
         background-color: #3498db;
-        transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-      }
-
-      #${submitBtn}:hover {
-        background-color: #ffffff;
-        color: #3498db;
-      }
-    `;
+      }`;
 
     overlay.id = "bc-id-overlay";
 
@@ -94,7 +118,7 @@ javascript: (function() {RewardCashback
     overlay.style.left = "0";
     overlay.style.width = "100%";
     overlay.style.height = "100%";
-    overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+    overlay.style.backgroundColor = "#0009";
     overlay.style.zIndex = "9998";
 
     form.style.position = "fixed";
@@ -108,41 +132,39 @@ javascript: (function() {RewardCashback
     form.style.zIndex = "9999";
     form.style.borderRadius = "3px";
 
-    let formHtml = `<label for="${whatFind}">
+    const formHtml = `<label for="${whatFind}">
                     Что ищем?
                     </label>
-                    <select name="select" id="${whatFind}">
-                      <option value="${RewardCashback}" selected>Кэшбэк</option>
-                      <option value="${RewardDicount}">Скидку</option>
+                    <select id="${whatFind}">
+                      <option value="${RewardCashback}">Кэшбэк</option>
+                      <option value="${RewardDicount}" selected>Скидку</option>
                     </select>
                     <label for="${percentId}"">
-                    Минимальный процент:
+                    Мин. %:
                     </label>
                     <input type="number" id="${percentId}" name="min-percent" value="" required">
-                    <label for="${delayId}"">Задержка (оптимальное - 3 сек.):</label>
-                    <input type="number" id="${delayId}" name="delay" value="3" required">
                     <label for="${pageId}">Страниц:</label>
                     <input type="number" id="${pageId}" name="max-page"">
                     <input id="${submitBtn}" type="submit" value="СТАРТ">`
     
     if (getHostname() != hostname) {
         form.tagName = 'DIV';
-        formHtml = `<div><h4>Сначала перейдите на сайт Мегамаркет (<a href="${itemsCatalogExample}">${hostname}</a>)</h4></div>`;
+        formHtml = `<div><h4>Перейдите на <a href="${itemsCatalogExample}">${hostname}</a></h4></div>`;
     } else if (!isItemsExists()) {
       form.tagName = 'DIV';
-      formHtml = `<div><h4>Сначала выберите любую категорию товаров из каталога <a style='font-weight: bold;' href="${itemsCatalogExample}">${hostname}</a></h4></div>`;
+      formHtml = `<div><h4>Товары не обнаружены</h4></div>`;
     } else {
       form.addEventListener('submit', function(e) {
         e.preventDefault();
         const percent = parseInt(document.getElementById(percentId).value);
-        const delay = parseInt(document.getElementById(delayId).value);
         const page = parseInt(document.getElementById(pageId).value);
         const rewardType = document.getElementById(whatFind).value;
+        const sortType = rewardType == RewardCashback ? document.getElementById(howSort).value : undefined;
   
         console.log([percent, delay, page]);
         removeBookmarlet();
   
-        start(percent, delay, page, rewardType);
+        start(percent, page, rewardType, sortType);
   
         formIsClose()
       });
@@ -154,8 +176,6 @@ javascript: (function() {RewardCashback
     );
 
     addBookmarlet();
-
-		
 
 		overlay.addEventListener('click', removeBookmarlet, { once: true });
   }
@@ -177,10 +197,8 @@ javascript: (function() {RewardCashback
   }
 
   const itemsSelectors = [
-    '.cnc-catalog-listing__items .catalog-item-mobile',
-    '.catalog-listing__items .ddl_product',
-    '.catalog-items-list .catalog-item-mobile',
-    '.catalog-items-list .ddl_product',
+    'div.catalog-item-mobile',
+    'div.catalog-item',
   ]
 
   const priceSelector = '.item-money .item-price span';
@@ -188,18 +206,17 @@ javascript: (function() {RewardCashback
   const discountSelector = 'span[class*="old-price-discount"][class$="price"]'
 
   const rootSelectors = [
-    'div.catalog-listing__items.catalog-listing__items_divider',
-    '.cnc-catalog-listing__items.cnc-catalog-listing__items_divider',
-    '.catalog-items-list'
+    '.catalog-items-list',
   ]
 
   const showMoreBtnSelectors = [
-      '.cnc-catalog-listing__show-more',
-      'button.catalog-listing__show-more',
-      '.catalog-items-list__show-more',
+    '.catalog-items-list__show-more',
+    '.cnc-catalog-listing__show-more',
+    'button.catalog-listing__show-more',
   ]
 
   const outOfStockSelector = '.catalog-listing__out-of-stock_items'
+  const outOfStockSelectors = ['.catalog-items-list__out-of-stock-heading']
 
   window.IntervalNum = 0;
 
@@ -234,6 +251,14 @@ javascript: (function() {RewardCashback
       }
       return Array.from(items);
   }
+
+  function isOutOfStockExists() {
+    for (var sel of outOfStockSelectors) {
+      if (document.querySelectorAll(sel).length) return true;
+    }
+    return false;
+  }
+
 
   function removeItemFromPage(item) {
       item.parentNode.removeChild(item);
@@ -275,81 +300,77 @@ javascript: (function() {RewardCashback
 
   }
 
-  function parsing(percents, root, rewardType, items=[]) {
-      if (!items.length) {
-          items = getItems();
-      }
-      console.log('start parsing');
-      let newItems = [];
+  function parsing(percents, root, rewardType, sortType, items=[]) {
+    if (!items.length) {
+        items = getItems();
+    }
+    console.log('start parsing');
+    let newItems = [];
 
-      for (let item of items) {
-          try {
-              [p, b, ps] = getItemPriceBonusPercents(item, rewardType);
-              if (ps < percents) {
-              } else {
-                  newItems.push(item);
-              }
-              
-              let bSpan = item.querySelector(bonusSelector);
-              if (bSpan.textContent.includes('%')) continue;
-              if (rewardType == RewardCashback) bSpan.textContent += ` [${ps}%]`;
-              bSpan.dataset['percents'] = ps;
-          } catch {
-              continue;
-          }
-      }
+    for (let item of items) {
+        try {
+            [p, b, ps] = getItemPriceBonusPercents(item, rewardType);
+            if (ps < percents) {
+            } else {
+                newItems.push(item);
+            }
+            
+            let bSpan = item.querySelector(bonusSelector);
+            if (bSpan.textContent.includes('%')) continue;
+            if (rewardType == RewardCashback) {
+              bSpan.textContent += ` [${ps}%]`
+              var totalCost = p - b;
+              bSpan.dataset['totalCost'] = totalCost;
+              item.querySelector(priceSelector).insertAdjacentHTML('beforebegin',
+              `<span style="color:green;">${totalCost} ₽</span><br>`)
+            };
+            bSpan.dataset['percents'] = ps;
+        } catch {
+            continue;
+        }
+    }
 
-      root.innerHTML = '';
-      newItems.sort(sortingByPercent);
-      newItems.forEach((el, index) => root.appendChild(el));
+    root.innerHTML = '';
+    var sortingFunc = sortType == SortTotalCost ? sortingByTotalCost : sortingByPercentDesc;
+    newItems.sort(sortingFunc);
+    newItems.forEach((el, index) => root.appendChild(el));
 
-      console.log('end parsing');
-      console.log(`elements - ${newItems.length}`);
+    console.log('end parsing');
+    console.log(`elements - ${newItems.length}`);
 
-      return {items: items, newItems: newItems};
+    return {items: items, newItems: newItems};
   }
 
-  function sortingByPercent(a, b) {
-      aPer = parseInt(a.querySelector(bonusSelector).dataset['percents']);
-      bPer = parseInt(b.querySelector(bonusSelector).dataset['percents']);
-      if (aPer > bPer) return -1;
-      if (aPer == bPer) return 0;
-      if (aPer < bPer) return 1;
+  function getDataPercents(tag, datasetName) {
+    return parseInt(tag.querySelector(bonusSelector).dataset[datasetName]);
   }
 
-  function delay(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
+  function sortingByPercentDesc(a, b) {
+    // Сортировка по убыванию %
+    var aPer = getDataPercents(a, 'percents');
+    var bPer = getDataPercents(b, 'percents');
+    if (aPer > bPer) return -1;
+    if (aPer == bPer) return 0;
+    if (aPer < bPer) return 1;
   }
 
-  async function paginate(ms, maxPage, curPage=0) {
+  function sortingByTotalCost(a, b) {
+    var aTotalCost = getDataPercents(a, 'totalCost');
+    var bTotalCost = getDataPercents(b, 'totalCost');
+
+    if (aTotalCost > bTotalCost) return 1;
+    if (aTotalCost == bTotalCost) return 0;
+    if (aTotalCost < bTotalCost) return -1;
+  }
+  function delay() {
+    return new Promise(resolve => setTimeout(resolve, 3000));
+  }
+
+  async function paginateWithCollectItems(maxPage, curPage=0, items=[]) {    
       let btn = getMoreBtn();
       
       curPage += 1;
       console.log(`page - ${curPage}`);
-      
-      removeOutOfStock();
-
-      if (maxPage && curPage == maxPage) {
-          removeItemFromPage(btn);
-          return;
-      }
-      
-      if (btn) {
-          btn.click();
-          await delay(ms);
-          await paginate(ms, maxPage, curPage);
-      } else {
-          console.log('no btn');
-      }
-  }
-
-  async function paginateWithCollectItems(ms, maxPage, curPage=0, items=[]) {    
-      let btn = getMoreBtn();
-      
-      curPage += 1;
-      console.log(`page - ${curPage}`);
-      
-      removeOutOfStock();
       
       let newItems;
       while (true) {
@@ -367,40 +388,46 @@ javascript: (function() {RewardCashback
           removeItemFromPage(btn);
           return items;
       }
+
+      if (isOutOfStockExists()) {
+        removeOutOfStock();
+        removeItemFromPage(btn);
+        return items;
+      }
       
       if (btn) {
           btn.click();
-          await delay(ms);
-          return await paginateWithCollectItems(ms, maxPage, curPage, items);
+          await delay();
+          return await paginateWithCollectItems(maxPage, curPage, items);
       } else {
           console.log('no btn');
           return items;
       }
   }
 
-  async function startParsing(pCount, ms, maxPage, rewardType, curPage=0) {
-    ms *= 1000;
+  async function startParsing(pCount, maxPage, rewardType, sortType, curPage=0) {
+    // старт парсинга
     items = await paginateWithCollectItems(
-        ms,
         maxPage,
         curPage
     )
 
     let root = getRoot();
-    data = parsing(pCount, root, rewardType, items);
+    data = parsing(pCount, root, rewardType, sortType, items);
     return data;
   }
 
   function getHostname() {
+    // получить текущий адрес сайта
     return window.location.hostname;
   }
 
-  function start(pCount, ms, maxPage, rewardType) {
+  function start(pCount, maxPage, rewardType, sortType) {
     // pCount: минимальный процент кэшбэка, например 73
-    // ms: задержка для пагинации в с (оптимальное - 3)
     // maxPage: максимальное количество страниц пагинации
     if (pCount < 0) pCount = 0;
-    data = startParsing(pCount, ms, maxPage, rewardType, 0);
+    data = startParsing(pCount, maxPage, rewardType, sortType,  0);
+    
     return data;
   }
 
