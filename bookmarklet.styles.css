@@ -1,3 +1,26 @@
+#bc-id-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #0009;
+    z-index: 9998;
+}
+
+#bc-id-form {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ccc;
+    box-shadow: #fff 0px 0px 10px;
+    z-index: 9999;
+    border-radius: 3px;
+}
+
 label[for="bc-id-w-f"], label[for="bc-id-min-per"], label[for="bc-id-sort"], label[for="bc-id-max-page"] {
     display: block;
     margin-bottom: 5px;

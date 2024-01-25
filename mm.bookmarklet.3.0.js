@@ -1,21 +1,35 @@
 javascript: (function() {
-    // Создаем элемент <link> для стилей
-    var styleElement = document.createElement('link');
-    styleElement.rel = 'stylesheet';
-    styleElement.type = 'text/css';
-    
-    // Задаем URL вашего CSS файла
-    var cssUrl = 'https://pastebin.com/raw/Z35DEmSU';
-    
-    // Устанавливаем атрибут href для загрузки стилей
-    styleElement.href = cssUrl;
+    function main() {
+        // Задаем URL вашего CSS файла
+        const cssUrl = 'https://raw.githubusercontent.com/msgtv/mm_cashback/main/bookmarklet.styles.css';
 
-    // Вставляем стили в DOM
-    document.head.appendChild(styleElement);
+        if (!window.MyBCLCssLoaded) {
+            fetch(cssUrl)
+            .then(response => {
+                if (!response.ok) {
+                throw new Error('Network');
+                }
+                return response.text();
+            })
+            .then(cssContent => {
+                // Обработайте полученное содержимое CSS файла
+                let style = document.createElement('style');
+                style.innerHTML = cssContent;
+                document.head.insertAdjacentElement('beforeend', style);
+
+                getInput();
+                window.MyBCLCssLoaded = true;
+            })
+            .catch(e=>{});
+        }
+
+        getInput();
+    }
 
     const overlay = document.createElement('div');
     const form = document.createElement('form');
-    window.MyBCLErrors = new Array();
+    overlay.id = 'bc-id-overlay';
+    form.id = 'bc-id-form';
   
     const RewardDicount = 'DST';
     const RewardCashback = 'CHK';
@@ -33,8 +47,6 @@ javascript: (function() {
   
     const hostname = 'megamarket.ru';
     const itemsCatalogExample = 'https://megamarket.ru/catalog/';
-  
-    let style = document.createElement('style');
   
     const cashBackSortType = `<div id="div-${howSort}">
                                 <label for="${howSort}">
@@ -85,27 +97,6 @@ javascript: (function() {
 
         if (isFormOpen()) return;
   
-      overlay.id = "bc-id-overlay";
-  
-      overlay.style.position = "fixed";
-      overlay.style.top = "0";
-      overlay.style.left = "0";
-      overlay.style.width = "100%";
-      overlay.style.height = "100%";
-      overlay.style.backgroundColor = "#0009";
-      overlay.style.zIndex = "9998";
-  
-      form.style.position = "fixed";
-      form.style.top = "50%";
-      form.style.left = "50%";
-      form.style.transform = "translate(-50%,-50%)";
-      form.style.padding = "20px";
-      form.style.background = "#fff";
-      form.style.border = "1px solid; #ccc";
-      form.style.boxShadow = "#fff 0px 0px 10px";
-      form.style.zIndex = "9999";
-      form.style.borderRadius = "3px";
-  
       let formHtml = `<label for="${whatFind}">
                       Что ищем?
                       </label>
@@ -117,17 +108,13 @@ javascript: (function() {
                       Мин. %:
                       </label>
                       <input type="number" id="${percentId}" name="min-percent" value="" required">`;
-        if (window.MyBCL) {
-          formHtml += `<p><b>${window.MyBCL.length} шт.</b></p>`
-        } else {
-          formHtml += `<label for="${pageId}">Страниц:</label><input type="number" id="${pageId}" name="max-page"">`;
-        }
-                      
-        /*if (window.MyBCL) {
-          formHtml += `<input checked type="checkbox" name="cl" id="${currenListId}"><label for="bc-id-cl">Тек.лист</label>`;
-        }*/
+      if (window.MyBCL) {
+        formHtml += `<p><b>${window.MyBCL.length} шт.</b></p>`
+      } else {
+        formHtml += `<label for="${pageId}">Страниц:</label><input type="number" id="${pageId}" name="max-page"">`;
+      }
         
-        formHtml += `<input id="${submitBtn}" type="submit" value="СТАРТ">`
+      formHtml += `<input id="${submitBtn}" type="submit" value="СТАРТ">`
       
       if (getHostname() != hostname) {
           form.tagName = 'DIV';
@@ -149,7 +136,7 @@ javascript: (function() {
             page = parseInt(document.getElementById(pageId).value);
           }
     
-          console.log([percent, page]);
+          
           removeBookmarlet();
   
           start(percent, page, rewardType, sortType);
@@ -164,24 +151,22 @@ javascript: (function() {
       );
   
       addBookmarlet();
-  
-          overlay.addEventListener('click', removeBookmarlet, { once: true });
+      overlay.addEventListener('click', removeBookmarlet, { once: true });
     }
   
     function addBookmarlet() {
       document.body.insertAdjacentElement('beforeend', overlay);
       document.body.insertAdjacentElement('beforeend', form);
-      document.head.insertAdjacentElement('beforeend', style);
   
       formIsOpen();
     }
   
     function removeBookmarlet() {
       form.parentNode.removeChild(form);
-          overlay.parentNode.removeChild(overlay);
-      style.parentNode.removeChild(style);
+      overlay.parentNode.removeChild(overlay);
   
       formIsClose();
+      window.bestCashFormOpen = false;
     }
   
     const itemsSelectors = [
@@ -253,7 +238,7 @@ javascript: (function() {
       try {
         item.parentNode.removeChild(item);
       } catch {
-        console.log(`no removed ${item}`);
+        
       }
         
     }
@@ -290,7 +275,7 @@ javascript: (function() {
         ps = 100 - Math.round(pp / bp * 100);
       }
   
-      console.log([pp, bp, ps]);
+      
   
       return [pp, bp, ps];
     }
@@ -299,7 +284,7 @@ javascript: (function() {
       /*if (!items.length) {
           items = getItems();
       }*/
-      console.log('start parsing');
+      
       let newItems = [];
   
       for (let item of window.MyBCL) {
@@ -334,8 +319,8 @@ javascript: (function() {
       newItems.sort(sortingFunc);
       newItems.forEach((el, index) => root.appendChild(el));
   
-      console.log('end parsing');
-      console.log(`elements - ${newItems.length}`);
+      
+      
     }
   
     function getDataPercents(item, datasetName) {
@@ -350,12 +335,7 @@ javascript: (function() {
         if (aPer > bPer) return -1;
         if (aPer == bPer) return 0;
         if (aPer < bPer) return 1;
-      } catch {
-        console.log('ошибка при сортировке');
-        console.log(`a - ${a}`);
-        console.log(`b - ${b}`);
-        window.MyBCLErrors.push([a, b]);
-      }
+      } catch {}
     }
   
     function sortingByTotalCost(a, b) {
@@ -373,7 +353,7 @@ javascript: (function() {
     async function paginateWithCollectItems(maxPage, curPage=0) {    
       let btn = getMoreBtn();
       curPage += 1;
-      console.log(`page - ${curPage}`);
+      
       
       let newItems;
       while (true) {
@@ -403,7 +383,6 @@ javascript: (function() {
           await delay();
           return await paginateWithCollectItems(maxPage, curPage);
       } else {
-          console.log('no btn');
           return;
       }
     }
@@ -425,22 +404,13 @@ javascript: (function() {
     }
   
     function start(pCount, maxPage, rewardType, sortType) {
-      console.log('start');
+      
       // pCount: минимальный процент кэшбэка, например 73
       // maxPage: максимальное количество страниц пагинации
       if (pCount < 0) pCount = 0;
       startParsing(pCount, maxPage, rewardType, sortType);
     }
-  
-    // для запуска вызови финкцию start с аргументами:
-    // 1. минимальный процент кэшбэка
-    // 2. ожидание/задержка (в мс)
-    // перед переходом  на следующую страницу
-    // 3. максимальное количество страницу
-    // Пример:
-    //        start(50, 3, 10);
-  
-  
-    getInput();
+
+    main();
   })();
   
