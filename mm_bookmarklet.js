@@ -1,6 +1,7 @@
 javascript: (function() {
   const overlay = document.createElement('div');
   const form = document.createElement('form');
+  window.MyBCLErrors = new Array();
 
   const RewardDicount = 'DST';
   const RewardCashback = 'CHK';
@@ -8,11 +9,13 @@ javascript: (function() {
   const SortDesc = 'DSC';
   const SortTotalCost = 'TTC';
 
+  // идентификаторы элементов формы
   const whatFind = 'bc-id-w-f';
   const percentId = 'bc-id-min-per';
   const howSort = 'bc-id-sort';
   const pageId = 'bc-id-max-page';
   const submitBtn = 'bc-id-smt';
+  //const currenListId = 'bc-id-cl';
 
   const hostname = 'megamarket.ru';
   const itemsCatalogExample = 'https://megamarket.ru/catalog/';
@@ -24,8 +27,8 @@ javascript: (function() {
                                 Сорт-ка:
                               </label>
                               <select id="${howSort}">
-                                <option value="${SortDesc}" selected>По убыв. %</option>
-                                <option value="${SortTotalCost}">Цена-кэшбэк</option>
+                              <option value="${SortTotalCost}" selected>Цена-кэшбэк</option>
+                                <option value="${SortDesc}">По убыв. %</option>
                               </select>
                             </div>`;
 
@@ -35,8 +38,7 @@ javascript: (function() {
       var howSortHTML = document.getElementById(howSort);
       if (target.value == RewardCashback) {
         if (!howSortHTML) {
-          var sBtn = document.getElementById(submitBtn);
-          sBtn.insertAdjacentHTML('beforebegin', cashBackSortType);
+          document.getElementById(whatFind).insertAdjacentHTML('afterend', cashBackSortType);
         }
       } else {
         if (howSortHTML) {
@@ -124,46 +126,60 @@ javascript: (function() {
     form.style.position = "fixed";
     form.style.top = "50%";
     form.style.left = "50%";
-    form.style.transform = "translate(-50%, -50%)";
+    form.style.transform = "translate(-50%,-50%)";
     form.style.padding = "20px";
     form.style.background = "#fff";
     form.style.border = "1px solid; #ccc";
-    form.style.boxShadow = "rgb(255 255 255) 0px 0px 10px";
+    form.style.boxShadow = "#fff 0px 0px 10px";
     form.style.zIndex = "9999";
     form.style.borderRadius = "3px";
 
-    const formHtml = `<label for="${whatFind}">
+    let formHtml = `<label for="${whatFind}">
                     Что ищем?
                     </label>
                     <select id="${whatFind}">
-                      <option value="${RewardCashback}">Кэшбэк</option>
                       <option value="${RewardDicount}" selected>Скидку</option>
+                      <option value="${RewardCashback}">Кэшбэк</option>
                     </select>
                     <label for="${percentId}"">
                     Мин. %:
                     </label>
-                    <input type="number" id="${percentId}" name="min-percent" value="" required">
-                    <label for="${pageId}">Страниц:</label>
-                    <input type="number" id="${pageId}" name="max-page"">
-                    <input id="${submitBtn}" type="submit" value="СТАРТ">`
+                    <input type="number" id="${percentId}" name="min-percent" value="" required">`;
+      if (window.MyBCL) {
+        formHtml += `<p><b>${window.MyBCL.length} шт.</b></p>`
+      } else {
+        formHtml += `<label for="${pageId}">Страниц:</label><input type="number" id="${pageId}" name="max-page"">`;
+      }
+                    
+      /*if (window.MyBCL) {
+        formHtml += `<input checked type="checkbox" name="cl" id="${currenListId}"><label for="bc-id-cl">Тек.лист</label>`;
+      }*/
+      
+      formHtml += `<input id="${submitBtn}" type="submit" value="СТАРТ">`
     
     if (getHostname() != hostname) {
         form.tagName = 'DIV';
         formHtml = `<div><h4>Перейдите на <a href="${itemsCatalogExample}">${hostname}</a></h4></div>`;
-    } else if (!isItemsExists()) {
+    } else if (!(isItemsExists() || window.MyBCL)) {
       form.tagName = 'DIV';
       formHtml = `<div><h4>Товары не обнаружены</h4></div>`;
     } else {
       form.addEventListener('submit', function(e) {
         e.preventDefault();
         const percent = parseInt(document.getElementById(percentId).value);
-        const page = parseInt(document.getElementById(pageId).value);
         const rewardType = document.getElementById(whatFind).value;
         const sortType = rewardType == RewardCashback ? document.getElementById(howSort).value : undefined;
+        let page;
+
+        if (window.MyBCL) {
+          page = 0;
+        } else {
+          page = parseInt(document.getElementById(pageId).value);
+        }
   
-        console.log([percent, delay, page]);
+        console.log([percent, page]);
         removeBookmarlet();
-  
+
         start(percent, page, rewardType, sortType);
   
         formIsClose()
@@ -203,7 +219,8 @@ javascript: (function() {
 
   const priceSelector = '.item-money .item-price span';
   const bonusSelector = '.item-money .item-bonus span.bonus-amount';
-  const discountSelector = 'span[class*="old-price-discount"][class$="price"]'
+  const discountSelector = 'span[class*="old-price-discount"][class$="price"]';
+  const discountPercentageSelector = 'div.discount-percentage';
 
   const rootSelectors = [
     '.catalog-items-list',
@@ -261,7 +278,12 @@ javascript: (function() {
 
 
   function removeItemFromPage(item) {
+    try {
       item.parentNode.removeChild(item);
+    } catch {
+      console.log(`no removed ${item}`);
+    }
+      
   }
 
   function removeItemsFromPage(items) {
@@ -296,35 +318,40 @@ javascript: (function() {
       ps = 100 - Math.round(pp / bp * 100);
     }
 
-    return [pp, bp, ps];
+    console.log([pp, bp, ps]);
 
+    return [pp, bp, ps];
   }
 
-  function parsing(percents, root, rewardType, sortType, items=[]) {
-    if (!items.length) {
+  function parsing(percents, root, rewardType, sortType) {
+    /*if (!items.length) {
         items = getItems();
-    }
+    }*/
     console.log('start parsing');
     let newItems = [];
 
-    for (let item of items) {
+    for (let item of window.MyBCL) {
         try {
-            [p, b, ps] = getItemPriceBonusPercents(item, rewardType);
-            if (ps < percents) {
-            } else {
-                newItems.push(item);
-            }
+          var [p, b, ps] = getItemPriceBonusPercents(item, rewardType);
+
+          var tItem = item.cloneNode(true);
+
+          if (ps >= percents) {
+            newItems.push(tItem);
+            var totalCost = p - b;
+
+            removeItemFromPage(tItem.querySelector(discountPercentageSelector));
+            tItem.dataset['totalCost'] = totalCost;
+            tItem.dataset['percents'] = ps;
+
+            var tItemPriceDiv = tItem.querySelector(priceSelector);
             
-            let bSpan = item.querySelector(bonusSelector);
-            if (bSpan.textContent.includes('%')) continue;
-            if (rewardType == RewardCashback) {
-              bSpan.textContent += ` [${ps}%]`
-              var totalCost = p - b;
-              bSpan.dataset['totalCost'] = totalCost;
-              item.querySelector(priceSelector).insertAdjacentHTML('beforebegin',
-              `<span style="color:green;">${totalCost} ₽</span><br>`)
-            };
-            bSpan.dataset['percents'] = ps;
+            var val = `${ps}%`;
+            if (rewardType == RewardCashback) val = `${totalCost} ₽ | ` + val;
+            tItemPriceDiv.insertAdjacentHTML(
+              'beforebegin',
+              `<span style="color:red;">${val}</span><br>`);
+          }
         } catch {
             continue;
         }
@@ -337,21 +364,26 @@ javascript: (function() {
 
     console.log('end parsing');
     console.log(`elements - ${newItems.length}`);
-
-    return {items: items, newItems: newItems};
   }
 
-  function getDataPercents(tag, datasetName) {
-    return parseInt(tag.querySelector(bonusSelector).dataset[datasetName]);
+  function getDataPercents(item, datasetName) {
+    return parseInt(item.dataset[datasetName]);
   }
 
   function sortingByPercentDesc(a, b) {
     // Сортировка по убыванию %
-    var aPer = getDataPercents(a, 'percents');
-    var bPer = getDataPercents(b, 'percents');
-    if (aPer > bPer) return -1;
-    if (aPer == bPer) return 0;
-    if (aPer < bPer) return 1;
+    try {
+      var aPer = getDataPercents(a, 'percents');
+      var bPer = getDataPercents(b, 'percents');
+      if (aPer > bPer) return -1;
+      if (aPer == bPer) return 0;
+      if (aPer < bPer) return 1;
+    } catch {
+      console.log('ошибка при сортировке');
+      console.log(`a - ${a}`);
+      console.log(`b - ${b}`);
+      window.MyBCLErrors.push([a, b]);
+    }
   }
 
   function sortingByTotalCost(a, b) {
@@ -366,55 +398,53 @@ javascript: (function() {
     return new Promise(resolve => setTimeout(resolve, 3000));
   }
 
-  async function paginateWithCollectItems(maxPage, curPage=0, items=[]) {    
-      let btn = getMoreBtn();
-      
-      curPage += 1;
-      console.log(`page - ${curPage}`);
-      
-      let newItems;
-      while (true) {
-          newItems = getItems();
-          if (newItems.length) break;
-          console.log('page loading waiting...')
-          await delay(1000);
-      }
-      
-      removeItemsFromPage(newItems);
-      
-      items = items.concat(Array.from(newItems));
+  async function paginateWithCollectItems(maxPage, curPage=0) {    
+    let btn = getMoreBtn();
+    curPage += 1;
+    console.log(`page - ${curPage}`);
+    
+    let newItems;
+    while (true) {
+        newItems = getItems();
+        if (newItems.length) break;
+        console.log('page loading waiting...')
+        await delay(1000);
+    }
+    
+    removeItemsFromPage(newItems);
+    
+    window.MyBCL = window.MyBCL.concat(Array.from(newItems));
 
-      if (maxPage && curPage == maxPage || maxPage < 1) {
-          removeItemFromPage(btn);
-          return items;
-      }
-
-      if (isOutOfStockExists()) {
-        removeOutOfStock();
+    if (maxPage && curPage == maxPage || maxPage < 1) {
         removeItemFromPage(btn);
-        return items;
-      }
-      
-      if (btn) {
-          btn.click();
-          await delay();
-          return await paginateWithCollectItems(maxPage, curPage, items);
-      } else {
-          console.log('no btn');
-          return items;
-      }
+        return;
+    }
+
+    if (isOutOfStockExists()) {
+      removeOutOfStock();
+      removeItemFromPage(btn);
+      return;
+    }
+    
+    if (btn) {
+        btn.click();
+        await delay();
+        return await paginateWithCollectItems(maxPage, curPage);
+    } else {
+        console.log('no btn');
+        return;
+    }
   }
 
-  async function startParsing(pCount, maxPage, rewardType, sortType, curPage=0) {
+  async function startParsing(pCount, maxPage, rewardType, sortType) {
     // старт парсинга
-    items = await paginateWithCollectItems(
-        maxPage,
-        curPage
-    )
+    if (!window.MyBCL) {
+      window.MyBCL = new Array();
+      await paginateWithCollectItems(maxPage, 0);
+    }
 
     let root = getRoot();
-    data = parsing(pCount, root, rewardType, sortType, items);
-    return data;
+    parsing(pCount, root, rewardType, sortType);
   }
 
   function getHostname() {
@@ -423,12 +453,11 @@ javascript: (function() {
   }
 
   function start(pCount, maxPage, rewardType, sortType) {
+    console.log('start');
     // pCount: минимальный процент кэшбэка, например 73
     // maxPage: максимальное количество страниц пагинации
     if (pCount < 0) pCount = 0;
-    data = startParsing(pCount, maxPage, rewardType, sortType,  0);
-    
-    return data;
+    startParsing(pCount, maxPage, rewardType, sortType);
   }
 
   // для запуска вызови финкцию start с аргументами:
